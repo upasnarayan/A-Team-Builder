@@ -1,0 +1,39 @@
+<html>
+<head>
+</head>
+<body>
+<img id="myimg" src="http://archpaper.com/uploads/image/Gilman-Hall-2.jpg"></img>
+<br/>
+<button onclick="splitImage()">Click me!</button>
+<br/>
+</body>
+
+<script type="text/javascript" src="../public/js/pixastic/pixastic.core.js"></script>
+<script type="text/javascript" src="../public/js/pixastic/actions/crop.js"></script>
+<script>
+function splitImage() {
+
+	var n = Math.floor(Math.sqrt(4));
+	var original_img = document.getElementById("myimg");
+
+	var img_width = original_img.width;
+	var img_height = original_img.height;
+
+
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			var new_img = document.createElement('img');
+			new_img.src = original_img.src;
+			new_img.id = "myimg" + i + ":" + j;
+			document.body.appendChild(new_img);
+			Pixastic.process(new_img, "crop", {
+				rect : {
+					left : i * (img_width / n), top : j * (img_height / n), width : Math.floor(img_width / n), height : Math.floor(img_height / n)
+				}
+			});
+		}
+	}
+}
+</script>
+
+</html>

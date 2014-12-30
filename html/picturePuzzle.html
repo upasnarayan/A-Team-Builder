@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>A-Team Builder &middot; Picture Puzzle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+<!--    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/Astyles.css" rel="stylesheet">
+    <link href="css/bootstrap-responsive.css" rel="stylesheet">-->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/Astyles.css" rel="stylesheet">
+    <link href="css/bootstrap-responsive.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="../assets/js/html5shiv.js"></script>
+    <![endif]-->
+
+    <!-- Fav and touch icons -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">
+    <link rel="shortcut icon" href="../assets/ico/favicon.png">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+  </head>
+
+  <body>
+    <div class="container">
+
+      <div class="masthead">
+        <h3 class="muted">A-Team Builder</h3>
+        <div class="navbar">
+          <div class="navbar-inner">
+            <div class="container">
+              <ul class="nav">
+                <li><a href="/">Home</a></li>
+                <!--<li><a href="picturePuzzle">Picture Puzzle</a></li>-->
+                <li class="active"><a href="#">Picture Puzzle</a></li>
+                <li><a href="anagram">Anagrams</a></li>
+                <li><a href="mathPuzzle">Math and CS Puzzles</a></li>
+                <li><a href="team">Team</a></li>
+              </ul>
+            </div>
+          </div>
+        </div><!-- /.navbar -->
+      </div>
+
+      <style>
+#holder { margin-top:100px; border: 10px dashed #ccc; width: 300px; min-height: 300px; margin: 20px auto;}
+#holder.hover { border: 10px dashed #0c0; }
+#holder img { display: block; margin: 10px auto; }
+#holder p { margin: 10px; font-size: 14px; }
+progress { width: 100%; }
+progress:after { content: '%'; }
+.fail { background: #c00; padding: 2px; color: #fff; }
+.hidden { display: none !important;}
+
+</style>
+<div style="margin-top:50px;" class="text-center">
+<div style="margin-left:15%;" class="span8 pagination-centered">
+<p>Create a picture puzzle invitation by simply dragging and dropping a picture to a meeting place, and click submit.
+We'll randomly distribute a puzzle piece to each of your team members listed below.</p>
+</div>
+<br/><br/><br/><br/>
+<article style="margin-bottom:50px;">
+  <div id="holder">
+  </div> 
+  <p id="upload" class="hidden"><label>Drag & drop not supported, but you can still upload via this input field:<br><input type="file"></label></p>
+  <p id="filereader">File API & FileReader API not supported</p>
+  <p id="formdata">XHR2's FormData is not supported</p>
+  <p id="progress">XHR2's upload progress isn't supported</p>
+</article>
+<button style="width:100px;" class="btn btn-primary" onclick="sendPicture()">Submit</button>
+</div>
+<script>
+
+var uploaded = false;
+
+var holder = document.getElementById('holder'),
+    tests = {
+      filereader: typeof FileReader != 'undefined',
+      dnd: 'draggable' in document.createElement('span'),
+      formdata: !!window.FormData,
+      progress: "upload" in new XMLHttpRequest
+    }, 
+    support = {
+      filereader: document.getElementById('filereader'),
+      formdata: document.getElementById('formdata'),
+      progress: document.getElementById('progress')
+    },
+    acceptedTypes = {
+      'image/png': true,
+      'image/jpeg': true,
+      'image/gif': true
+    },
+    fileupload = document.getElementById('upload');
+
+"filereader formdata progress".split(' ').forEach(function (api) {
+  if (tests[api] === false) {
+    support[api].className = 'fail';
+  } else {
+    // FFS. I could have done el.hidden = true, but IE doesn't support
+    // hidden, so I tried to create a polyfill that would extend the
+    // Element.prototype, but then IE10 doesn't even give me access
+    // to the Element object. Brilliant.
+    support[api].className = 'hidden';
+  }
+});
+
+function previewfile(file) {
+  if (tests.filereader === true && acceptedTypes[file.type] === true) {
+    var reader = new FileReader();
+    reader.onload = function (event) {
+      var image = new Image();
+      image.id = "invitation_image";
+      //alert(file.name); // change
+      image.src = event.target.result;
+      image.width = 250; // a fake resize
+      if (uploaded) {
+        holder.removeChild(document.getElementById("invitation_image"));
+      }
+        holder.appendChild(image);
+      uploaded = true;
+    };
+
+    reader.readAsDataURL(file);
+  }  else {
+    holder.innerHTML += '<p>Uploaded ' + file.name + ' ' + (file.size ? (file.size/1024|0) + 'K' : '');
+    console.log(file);
+  }
+}
+
+function readfiles(files) {
+    debugger;
+    var formData = tests.formdata ? new FormData() : null;
+    for (var i = 0; i < files.length; i++) {
+      if (tests.formdata) formData.append('file', files[i]);
+      previewfile(files[i]);
+    }
+
+    // now post a new XHR request
+    if (tests.formdata) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/devnull.php');
+      xhr.onload = function() {};
+
+      if (tests.progress) {
+        xhr.upload.onprogress = function (event) {
+          if (event.lengthComputable) {
+            var complete = (event.loaded / event.total * 100 | 0);
+          }
+        }
+      }
+
+      xhr.send(formData);
+    }
+}
+
+if (tests.dnd) { 
+  holder.ondragover = function () { this.className = 'hover'; return false; };
+  holder.ondragend = function () { this.className = ''; return false; };
+  holder.ondrop = function (e) {
+    this.className = '';
+    e.preventDefault();
+    readfiles(e.dataTransfer.files);
+  }
+} else {
+  fileupload.className = 'hidden';
+  fileupload.querySelector('input').onchange = function () {
+    readfiles(this.files);
+  };
+}
+
+
+function sendPicture() {
+  if (!uploaded) {
+    alert("Please upload a picture first!");
+  }
+  else {
+    var request = new XMLHttpRequest();
+    var img = document.getElementById("invitation_image");
+    var params = "imageKey=" + img.src;
+    request.open("POST", "/getPicture", true);
+    request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    request.send(params);
+    document.location.href = "/submitted";
+  }
+   //  //var formdata = new FormData();
+   // //Ivar img = document.getElementById("invitation_image");
+   //  //alert(img);
+   //  var params = "imageKey=" + "hi"; // chan
+   //  //formdata.append("imageKey", img.src);
+
+
+}
+
+
+
+</script>
+
+
+      <hr>
+
+      <div class="footer">
+        <p>&copy; A-Team Builder 2014</p>
+      </div>
+
+    </div> <!-- /container -->
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="js/bootstrap.min.js"></script>
+
+  </body>
+</html>
